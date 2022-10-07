@@ -51,17 +51,7 @@ class FirebaseApiClient {
               'Bearer ${(await credential.getAccessToken()).accessToken}'
         });
 
-    if (response.statusCode != 200) {
-      var v = json.decode(response.body);
-      throw FirebaseApiException(
-          code: v['error']['status'],
-          message: v['error']['message'],
-          status: response.statusCode,
-          request: response.request!);
-    }
-
-    return Snapshot.fromJson(json.decode(response.body), decoder: decoder)
-        .as<T>();
+    return _handleResponse(response);
   }
 
   Future<List<T>> list<T>(String path, String field,
@@ -91,6 +81,20 @@ class FirebaseApiClient {
             },
             body: json.encode(body));
 
+    return _handleResponse(response);
+  }
+
+  Future<void> delete(String path) async {
+    var response = await httpClient
+        .delete(Uri.parse('$firebaseApiOrigin/$version/$path'), headers: {
+      'Authorization':
+          'Bearer ${(await credential.getAccessToken()).accessToken}'
+    });
+
+    return _handleResponse(response);
+  }
+
+  Future<T> _handleResponse<T>(http.Response response) async {
     if (response.statusCode != 200) {
       var v = json.decode(response.body);
       throw FirebaseApiException(

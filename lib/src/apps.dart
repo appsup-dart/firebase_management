@@ -134,11 +134,18 @@ class FirebaseManagementApps {
     return s.child('certificates').asList<AppAndroidShaData>() ?? [];
   }
 
+  /// Adds a new SHA hash for an Firebase Android app
   Future<AppAndroidShaData> createAppAndroidSha(String projectId, String appId,
       {required String shaHash, required ShaCertificateType certType}) async {
     return await _client.post<AppAndroidShaData>(
         'projects/$projectId/androidApps/$appId/sha',
         {'shaHash': shaHash, 'certType': certType.name.toUpperCase()});
+  }
+
+  /// Deletes an existing Firebase Android app SHA certificate hash
+  Future<void> deleteAppAndroidSha(
+      String projectId, String appId, String shaId) async {
+    await _client.delete('projects/$projectId/androidApps/$appId/sha/$shaId');
   }
 }
 
@@ -178,6 +185,8 @@ class AppConfigurationData extends AppMetadata {
 
 class AppAndroidShaData extends UnmodifiableSnapshotView {
   AppAndroidShaData(Snapshot snapshot) : super(snapshot);
+
+  String get id => name.split('/').last;
 
   String get name => get('name');
 
