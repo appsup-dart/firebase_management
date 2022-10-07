@@ -133,6 +133,13 @@ class FirebaseManagementApps {
 
     return s.child('certificates').asList<AppAndroidShaData>() ?? [];
   }
+
+  Future<AppAndroidShaData> createAppAndroidSha(String projectId, String appId,
+      {required String shaHash, required ShaCertificateType certType}) async {
+    return await _client.post<AppAndroidShaData>(
+        'projects/$projectId/androidApps/$appId/sha',
+        {'shaHash': shaHash, 'certType': certType.name.toUpperCase()});
+  }
 }
 
 class AppMetadata extends UnmodifiableSnapshotView {

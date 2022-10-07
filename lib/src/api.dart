@@ -82,7 +82,6 @@ class FirebaseApiClient {
   }
 
   Future<T> post<T>(String path, Map<String, dynamic> body) async {
-    print('post ${Uri.parse('$firebaseApiOrigin/$version/$path')} $body');
     var response =
         await httpClient.post(Uri.parse('$firebaseApiOrigin/$version/$path'),
             headers: {
