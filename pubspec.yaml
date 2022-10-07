@@ -1,0 +1,17 @@
+name: firebase_management
+description: Tools for managing firebase projects
+version: 0.0.1
+homepage: https://github.com/appsup-dart/firebase_management
+
+environment:
+  sdk: '>=2.17.5 <3.0.0'
+
+dependencies:
+  snapshot: ^0.2.5
+  firebase_admin: ^0.2.0
+  http: ^0.13.4
+  plist_parser: ^0.0.9
+
+dev_dependencies:
+  lints: ^2.0.0
+  test: ^1.16.0
