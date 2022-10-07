@@ -11,6 +11,7 @@ dependencies:
   firebase_admin: ^0.2.0
   http: ^0.13.4
   plist_parser: ^0.0.9
+  retry: ^3.1.0
 
 dev_dependencies:
   lints: ^2.0.0

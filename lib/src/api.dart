@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:firebase_admin/firebase_admin.dart';
+import 'operation.dart';
 import 'package:snapshot/snapshot.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,7 +13,7 @@ class FirebaseApiClient {
 
   static const version = 'v1beta1';
 
-  static final _decoder = SnapshotDecoder()
+  static final decoder = SnapshotDecoder()
     ..register<Snapshot, FirebaseProjectMetadata>(
         (v) => FirebaseProjectMetadata(v))
     ..register<Snapshot, DefaultProjectResources>(
@@ -21,6 +22,7 @@ class FirebaseApiClient {
     ..register<Snapshot, AppMetadata>((v) => AppMetadata(v))
     ..register<Snapshot, Snapshot>((v) => v)
     ..register<Snapshot, AppConfigurationData>((v) => AppConfigurationData(v))
+    ..register<Snapshot, OperationResult>((v) => OperationResult(v))
     ..register<String, AppPlatform>((v) => const {
           'ANDROID': AppPlatform.android,
           'IOS': AppPlatform.ios,
@@ -49,10 +51,11 @@ class FirebaseApiClient {
       throw FirebaseApiException(
           code: v['error']['status'],
           message: v['error']['message'],
+          status: response.statusCode,
           request: response.request!);
     }
 
-    return Snapshot.fromJson(json.decode(response.body), decoder: _decoder)
+    return Snapshot.fromJson(json.decode(response.body), decoder: decoder)
         .as<T>();
   }
 
@@ -72,13 +75,42 @@ class FirebaseApiClient {
 
     return projects;
   }
+
+  Future<T> post<T>(String path, Map<String, dynamic> body) async {
+    print('post ${Uri.parse('$firebaseApiOrigin/$version/$path')} $body');
+    var response =
+        await httpClient.post(Uri.parse('$firebaseApiOrigin/$version/$path'),
+            headers: {
+              'Authorization':
+                  'Bearer ${(await credential.getAccessToken()).accessToken}',
+              'Content-Type': 'application/json'
+            },
+            body: json.encode(body));
+
+    if (response.statusCode != 200) {
+      var v = json.decode(response.body);
+      throw FirebaseApiException(
+          code: v['error']['status'],
+          message: v['error']['message'],
+          status: response.statusCode,
+          request: response.request!);
+    }
+
+    return Snapshot.fromJson(json.decode(response.body), decoder: decoder)
+        .as<T>();
+  }
 }
 
 class FirebaseApiException extends FirebaseException {
   final http.BaseRequest request;
 
+  final int status;
+
   FirebaseApiException(
-      {required String code, required String message, required this.request})
+      {required this.status,
+      required String code,
+      required String message,
+      required this.request})
       : super(code: code, message: message);
 
   @override

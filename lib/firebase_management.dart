@@ -8,6 +8,8 @@ import 'package:plist_parser/plist_parser.dart';
 
 import 'package:snapshot/snapshot.dart';
 
+import 'src/operation.dart';
+
 export 'package:firebase_admin/firebase_admin.dart'
     show Credential, Credentials;
 

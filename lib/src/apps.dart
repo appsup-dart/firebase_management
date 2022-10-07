@@ -85,6 +85,44 @@ class FirebaseManagementApps {
         return ':searchApps'; // List apps in any platform
     }
   }
+
+  /// Creates a new ios app in the specified Firebase project.
+  Future<AppMetadata> createIosApp(String projectId,
+      {String? displayName,
+      String? appStoreId,
+      required String bundleId}) async {
+    return _createApp(projectId, AppPlatform.ios, {
+      if (displayName != null) 'displayName': displayName,
+      if (appStoreId != null) 'appStoreId': appStoreId,
+      'bundleId': bundleId,
+    });
+  }
+
+  /// Creates a new android app in the specified Firebase project.
+  Future<AppMetadata> createAndroidApp(String projectId,
+      {String? displayName, required String packageName}) async {
+    return _createApp(projectId, AppPlatform.android, {
+      if (displayName != null) 'displayName': displayName,
+      'packageName': packageName,
+    });
+  }
+
+  /// Creates a new android app in the specified Firebase project.
+  Future<AppMetadata> createWebApp(String projectId,
+      {String? displayName}) async {
+    return _createApp(projectId, AppPlatform.web, {
+      if (displayName != null) 'displayName': displayName,
+    });
+  }
+
+  Future<AppMetadata> _createApp(
+      String projectId, AppPlatform platform, Map<String, dynamic> data) async {
+    var s = await _client.post<Snapshot>(
+        'projects/$projectId${_getSuffix(platform)}', data);
+
+    return OperationPoller<AppMetadata>(_client)
+        .poll(s.child('name').as<String>());
+  }
 }
 
 class AppMetadata extends UnmodifiableSnapshotView {
