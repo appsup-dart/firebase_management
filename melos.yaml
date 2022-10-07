@@ -1,0 +1,22 @@
+
+name: firebase_dart
+
+repository: https://github.com/appsup-dart/firebase_management
+
+
+packages:
+  - .
+
+ide:
+  intellij: false
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+  version:
+    includeScopes: true
+    linkToCommits: true
+
+
+
+ 
