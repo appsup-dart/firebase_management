@@ -23,6 +23,11 @@ class FirebaseApiClient {
     ..register<Snapshot, Snapshot>((v) => v)
     ..register<Snapshot, AppConfigurationData>((v) => AppConfigurationData(v))
     ..register<Snapshot, OperationResult>((v) => OperationResult(v))
+    ..register<Snapshot, AppAndroidShaData>((v) => AppAndroidShaData(v))
+    ..register<String, ShaCertificateType>((v) => const {
+          'SHA_1': ShaCertificateType.sha_1,
+          'SHA_256': ShaCertificateType.sha_256,
+        }[v]!)
     ..register<String, AppPlatform>((v) => const {
           'ANDROID': AppPlatform.android,
           'IOS': AppPlatform.ios,

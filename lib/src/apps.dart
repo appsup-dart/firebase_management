@@ -123,6 +123,16 @@ class FirebaseManagementApps {
     return OperationPoller<AppMetadata>(_client)
         .poll(s.child('name').as<String>());
   }
+
+  /// Lists all Firebase android app SHA certificates identified by the
+  /// specified app ID.
+  Future<List<AppAndroidShaData>> listAppAndroidSha(
+      String projectId, String appId) async {
+    var s = await _client
+        .get<Snapshot>('projects/$projectId/androidApps/$appId/sha');
+
+    return s.child('certificates').asList<AppAndroidShaData>() ?? [];
+  }
 }
 
 class AppMetadata extends UnmodifiableSnapshotView {
@@ -166,9 +176,7 @@ class AppAndroidShaData extends UnmodifiableSnapshotView {
 
   String get shaHash => get('shaHash');
 
-  ShaCertificateType get certType => ShaCertificateType.sha_1;
-
-  Map<String, String>? get sdkConfig => getMap('sdkConfig');
+  ShaCertificateType get certType => get('certType');
 }
 
 enum AppPlatform {
