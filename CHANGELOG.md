@@ -1,3 +1,8 @@
+## 0.0.3
+
+ - **FEAT**: added FirebaseManagementApps.get/set/deleteApnsAuthKey. ([b306be07](https://github.com/appsup-dart/firebase_management/commit/b306be078d9e55bd5931fd996fbc3d1a83e5adb5))
+ - **FEAT**: added FirebaseManagementApps.updateApp. ([46364085](https://github.com/appsup-dart/firebase_management/commit/4636408539894f9db02b997ac2a9833ea0c4efe4))
+
 ## 0.0.2
 
  - **FEAT**: added FirebaseManagementApps.deleteAppAndroidSha. ([0e24df4e](https://github.com/appsup-dart/firebase_management/commit/0e24df4eb19cbd189eedbc818ebf5a3b5558d03c))
