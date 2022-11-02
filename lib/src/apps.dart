@@ -124,6 +124,23 @@ class FirebaseManagementApps {
         .poll(s.child('name').as<String>());
   }
 
+  Future<AppMetadata> updateApp(
+    String projectId,
+    AppPlatform platform,
+    String appId, {
+    String? displayName,
+    String? teamId,
+  }) async {
+    if (platform != AppPlatform.ios && teamId != null) {
+      throw ArgumentError('teamId can only be set for iOS apps');
+    }
+    return await _client.patch<AppMetadata>(
+        'projects/$projectId${_getSuffix(platform)}/$appId', {
+      if (displayName != null) 'displayName': displayName,
+      if (teamId != null) 'teamId': teamId,
+    });
+  }
+
   /// Lists all Firebase android app SHA certificates identified by the
   /// specified app ID.
   Future<List<AppAndroidShaData>> listAppAndroidSha(
@@ -171,6 +188,8 @@ class AppMetadata extends UnmodifiableSnapshotView {
   String? get packageName => get('packageName');
 
   List<String>? get appUrls => getList('appUrls');
+
+  String? get teamId => get('teamId');
 }
 
 class AppConfigurationData extends AppMetadata {

@@ -84,6 +84,20 @@ class FirebaseApiClient {
     return _handleResponse(response);
   }
 
+  Future<T> patch<T>(String path, Map<String, dynamic> body) async {
+    var response = await httpClient.patch(
+        Uri.parse('$firebaseApiOrigin/$version/$path')
+            .replace(queryParameters: {'updateMask': body.keys.join(',')}),
+        headers: {
+          'Authorization':
+              'Bearer ${(await credential.getAccessToken()).accessToken}',
+          'Content-Type': 'application/json'
+        },
+        body: json.encode(body));
+
+    return _handleResponse(response);
+  }
+
   Future<void> delete(String path) async {
     var response = await httpClient
         .delete(Uri.parse('$firebaseApiOrigin/$version/$path'), headers: {
