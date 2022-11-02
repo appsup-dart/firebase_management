@@ -24,6 +24,7 @@ class FirebaseApiClient {
     ..register<Snapshot, AppConfigurationData>((v) => AppConfigurationData(v))
     ..register<Snapshot, OperationResult>((v) => OperationResult(v))
     ..register<Snapshot, AppAndroidShaData>((v) => AppAndroidShaData(v))
+    ..register<Snapshot, ApnsAuthKey>((v) => ApnsAuthKey(v))
     ..register<String, ShaCertificateType>((v) => const {
           'SHA_1': ShaCertificateType.sha_1,
           'SHA_256': ShaCertificateType.sha_256,
@@ -39,13 +40,19 @@ class FirebaseApiClient {
 
   final Credential credential;
 
-  FirebaseApiClient(this.credential, {http.Client? httpClient})
-      : httpClient = httpClient ?? http.Client();
+  final String baseUri;
+
+  FirebaseApiClient(this.credential, {http.Client? httpClient, String? baseUri})
+      : httpClient = httpClient ?? http.Client(),
+        baseUri = baseUri ?? '$firebaseApiOrigin/$version/';
+
+  FirebaseApiClient withBaseUri(String baseUri) => FirebaseApiClient(credential,
+      httpClient: httpClient,
+      baseUri: baseUri.endsWith('/') ? baseUri : '$baseUri/');
 
   Future<T> get<T>(String path, {Map<String, String>? query}) async {
     var response = await httpClient.get(
-        Uri.parse('$firebaseApiOrigin/$version/$path')
-            .replace(queryParameters: query),
+        Uri.parse('$baseUri$path').replace(queryParameters: query),
         headers: {
           'Authorization':
               'Bearer ${(await credential.getAccessToken()).accessToken}'
@@ -72,21 +79,21 @@ class FirebaseApiClient {
   }
 
   Future<T> post<T>(String path, Map<String, dynamic> body) async {
-    var response =
-        await httpClient.post(Uri.parse('$firebaseApiOrigin/$version/$path'),
-            headers: {
-              'Authorization':
-                  'Bearer ${(await credential.getAccessToken()).accessToken}',
-              'Content-Type': 'application/json'
-            },
-            body: json.encode(body));
+    print(Uri.parse('$baseUri$path'));
+    var response = await httpClient.post(Uri.parse('$baseUri$path'),
+        headers: {
+          'Authorization':
+              'Bearer ${(await credential.getAccessToken()).accessToken}',
+          'Content-Type': 'application/json'
+        },
+        body: json.encode(body));
 
     return _handleResponse(response);
   }
 
   Future<T> patch<T>(String path, Map<String, dynamic> body) async {
     var response = await httpClient.patch(
-        Uri.parse('$firebaseApiOrigin/$version/$path')
+        Uri.parse('$baseUri$path')
             .replace(queryParameters: {'updateMask': body.keys.join(',')}),
         headers: {
           'Authorization':
@@ -99,11 +106,11 @@ class FirebaseApiClient {
   }
 
   Future<void> delete(String path) async {
-    var response = await httpClient
-        .delete(Uri.parse('$firebaseApiOrigin/$version/$path'), headers: {
-      'Authorization':
-          'Bearer ${(await credential.getAccessToken()).accessToken}'
-    });
+    var response = await httpClient.delete(Uri.parse('$baseUri$path'),
+        headers: {
+          'Authorization':
+              'Bearer ${(await credential.getAccessToken()).accessToken}'
+        });
 
     return _handleResponse(response);
   }

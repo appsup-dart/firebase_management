@@ -141,6 +141,29 @@ class FirebaseManagementApps {
     });
   }
 
+  Future<ApnsAuthKey> getApnsAuthKey(String projectId, String bundleId) async {
+    return _client
+        .withBaseUri('https://mobilesdk-pa.clients6.google.com/v1')
+        .get('projects/$projectId/clients/ios:$bundleId:getApnsAuthKey');
+  }
+
+  Future<void> setApnsAuthKey(String projectId, String bundleId,
+      {required String keyId, required List<int> privateKey}) async {
+    await _client
+        .withBaseUri('https://mobilesdk-pa.clients6.google.com/v1')
+        .post('projects/$projectId/clients/ios:$bundleId:setApnsAuthKey', {
+      'keyId': keyId,
+      'privateKey': base64.encode(privateKey),
+    });
+  }
+
+  Future<void> deleteApnsAuthKey(String projectId, String bundleId) async {
+    await _client
+        .withBaseUri('https://mobilesdk-pa.clients6.google.com/v1')
+        .post(
+            'projects/$projectId/clients/ios:$bundleId:deleteApnsAuthKey', {});
+  }
+
   /// Lists all Firebase android app SHA certificates identified by the
   /// specified app ID.
   Future<List<AppAndroidShaData>> listAppAndroidSha(
@@ -226,4 +249,10 @@ enum ShaCertificateType {
   unspecified,
   sha_1,
   sha_256,
+}
+
+class ApnsAuthKey extends UnmodifiableSnapshotView {
+  ApnsAuthKey(Snapshot snapshot) : super(snapshot);
+
+  String get keyId => get('keyId');
 }
