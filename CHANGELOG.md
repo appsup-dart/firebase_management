@@ -1,3 +1,7 @@
+## 0.0.4
+
+ - **FEAT**: added FirebaseManagementProjects.getAdminSdkConfig. ([6cad1003](https://github.com/appsup-dart/firebase_management/commit/6cad10032277408ce88890ad4785ae168ceed8fe))
+
 ## 0.0.3
 
  - **FEAT**: added FirebaseManagementApps.get/set/deleteApnsAuthKey. ([b306be07](https://github.com/appsup-dart/firebase_management/commit/b306be078d9e55bd5931fd996fbc3d1a83e5adb5))
