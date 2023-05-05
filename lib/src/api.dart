@@ -19,6 +19,7 @@ class FirebaseApiClient {
     ..register<Snapshot, DefaultProjectResources>(
         (v) => DefaultProjectResources(v))
     ..register<Snapshot, CloudProjectInfo>((v) => CloudProjectInfo(v))
+    ..register<Snapshot, AdminSdkConfig>((v) => AdminSdkConfig(v))
     ..register<Snapshot, AppMetadata>((v) => AppMetadata(v))
     ..register<Snapshot, Snapshot>((v) => v)
     ..register<Snapshot, AppConfigurationData>((v) => AppConfigurationData(v))
