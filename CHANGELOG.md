@@ -1,3 +1,7 @@
+## 0.0.4+1
+
+ - **FIX**: TypeError in getAppConfig for ios app when google auth not enabled. ([132967c1](https://github.com/appsup-dart/firebase_management/commit/132967c1f799898b1f12654b2fd8120d075a4894))
+
 ## 0.0.4
 
  - **FEAT**: added FirebaseManagementProjects.getAdminSdkConfig. ([6cad1003](https://github.com/appsup-dart/firebase_management/commit/6cad10032277408ce88890ad4785ae168ceed8fe))
