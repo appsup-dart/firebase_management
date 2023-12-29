@@ -41,13 +41,15 @@ class FirebaseManagementApps {
   Map<String, String> _parseIosConfig(
       Map<String, dynamic> config, String appId) {
     return {
-      'projectId': config['PROJECT_ID'],
-      'messagingSenderId': config['GCM_SENDER_ID'],
-      'databaseURL': config['DATABASE_URL'],
-      'storageBucket': config['STORAGE_BUCKET'],
-      'apiKey': config['API_KEY'],
+      if (config['PROJECT_ID'] != null) 'projectId': config['PROJECT_ID'],
+      if (config['GCM_SENDER_ID'] != null)
+        'messagingSenderId': config['GCM_SENDER_ID'],
+      if (config['DATABASE_URL'] != null) 'databaseURL': config['DATABASE_URL'],
+      if (config['STORAGE_BUCKET'] != null)
+        'storageBucket': config['STORAGE_BUCKET'],
+      if (config['API_KEY'] != null) 'apiKey': config['API_KEY'],
       'appId': appId,
-      'iosClientId': config['CLIENT_ID'],
+      if (config['CLIENT_ID'] != null) 'iosClientId': config['CLIENT_ID'],
     };
   }
 
