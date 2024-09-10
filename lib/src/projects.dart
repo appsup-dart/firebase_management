@@ -1,4 +1,4 @@
-part of firebase_management;
+part of '../firebase_management.dart';
 
 class FirebaseManagementProjects {
   final FirebaseApiClient firebaseAPIClient;
@@ -38,7 +38,7 @@ class FirebaseManagementProjects {
 }
 
 class CloudProjectInfo extends UnmodifiableSnapshotView {
-  CloudProjectInfo(Snapshot snapshot) : super(snapshot);
+  CloudProjectInfo(super.snapshot);
 
   String get project => get<String>('project');
 
@@ -48,7 +48,7 @@ class CloudProjectInfo extends UnmodifiableSnapshotView {
 }
 
 class FirebaseProjectMetadata extends UnmodifiableSnapshotView {
-  FirebaseProjectMetadata(Snapshot snapshot) : super(snapshot);
+  FirebaseProjectMetadata(super.snapshot);
 
   String get projectId => get('projectId');
 
@@ -64,7 +64,7 @@ class FirebaseProjectMetadata extends UnmodifiableSnapshotView {
 }
 
 class DefaultProjectResources extends UnmodifiableSnapshotView {
-  DefaultProjectResources(Snapshot snapshot) : super(snapshot);
+  DefaultProjectResources(super.snapshot);
 
   String? get hostingSite => get('hostingSite');
 
@@ -76,7 +76,7 @@ class DefaultProjectResources extends UnmodifiableSnapshotView {
 }
 
 class AdminSdkConfig extends UnmodifiableSnapshotView {
-  AdminSdkConfig(Snapshot snapshot) : super(snapshot);
+  AdminSdkConfig(super.snapshot);
 
   /// A user-assigned unique identifier for the FirebaseProject.
   ///

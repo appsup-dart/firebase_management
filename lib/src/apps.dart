@@ -1,4 +1,4 @@
-part of firebase_management;
+part of '../firebase_management.dart';
 
 class FirebaseManagementApps {
   final FirebaseApiClient _client;
@@ -192,7 +192,7 @@ class FirebaseManagementApps {
 }
 
 class AppMetadata extends UnmodifiableSnapshotView {
-  AppMetadata(Snapshot snapshot) : super(snapshot);
+  AppMetadata(super.snapshot);
 
   String get name => get('name');
 
@@ -218,7 +218,7 @@ class AppMetadata extends UnmodifiableSnapshotView {
 }
 
 class AppConfigurationData extends AppMetadata {
-  AppConfigurationData(Snapshot snapshot) : super(snapshot);
+  AppConfigurationData(super.snapshot);
 
   String? get configFilename => get('configFilename');
 
@@ -228,7 +228,7 @@ class AppConfigurationData extends AppMetadata {
 }
 
 class AppAndroidShaData extends UnmodifiableSnapshotView {
-  AppAndroidShaData(Snapshot snapshot) : super(snapshot);
+  AppAndroidShaData(super.snapshot);
 
   String get id => name.split('/').last;
 
@@ -254,7 +254,7 @@ enum ShaCertificateType {
 }
 
 class ApnsAuthKey extends UnmodifiableSnapshotView {
-  ApnsAuthKey(Snapshot snapshot) : super(snapshot);
+  ApnsAuthKey(super.snapshot);
 
   String get keyId => get('keyId');
 }

@@ -138,10 +138,9 @@ class FirebaseApiException extends FirebaseException {
 
   FirebaseApiException(
       {required this.status,
-      required String code,
-      required String message,
-      required this.request})
-      : super(code: code, message: message);
+      required super.code,
+      required super.message,
+      required this.request});
 
   @override
   String toString() {
