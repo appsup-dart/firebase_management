@@ -1,3 +1,8 @@
+## 0.0.4+2
+
+ - **REFACTOR**: support for http ^1.0.0. ([e47b095e](https://github.com/appsup-dart/firebase_management/commit/e47b095e756870ad6de825fca2962c14f99e6dbd))
+ - **REFACTOR**: upgrade to firebase_admin ^0.3.0. ([bf308fe4](https://github.com/appsup-dart/firebase_management/commit/bf308fe46200c1fdccef08d99d31fd9687320025))
+
 ## 0.0.4+1
 
  - **FIX**: TypeError in getAppConfig for ios app when google auth not enabled. ([132967c1](https://github.com/appsup-dart/firebase_management/commit/132967c1f799898b1f12654b2fd8120d075a4894))
