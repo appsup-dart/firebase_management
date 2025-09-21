@@ -10,7 +10,7 @@ dependencies:
   snapshot: ^0.2.5
   firebase_admin: ^0.3.0
   http: '>=0.13.4 <2.0.0'
-  plist_parser: ^0.0.9
+  plist_parser: '>=0.0.9 <0.3.0'
   retry: ^3.1.0
 
 dev_dependencies:
