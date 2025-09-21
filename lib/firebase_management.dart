@@ -1,4 +1,4 @@
-library firebase_management;
+library;
 
 import 'dart:convert';
 
