@@ -1,3 +1,8 @@
+## 0.0.4+3
+
+ - **REFACTOR**: set min sdk to 3.0.0. ([a3d39352](https://github.com/appsup-dart/firebase_management/commit/a3d39352eef5f1ec72af260c198b84edaceefc2a))
+ - **REFACTOR**: support for plist_parser ^0.2.0. ([1f837749](https://github.com/appsup-dart/firebase_management/commit/1f8377496d7fd7ac1eef688368ce96f790bafed4))
+
 ## 0.0.4+2
 
  - **REFACTOR**: support for http ^1.0.0. ([e47b095e](https://github.com/appsup-dart/firebase_management/commit/e47b095e756870ad6de825fca2962c14f99e6dbd))
