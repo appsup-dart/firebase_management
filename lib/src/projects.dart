@@ -37,6 +37,12 @@ class FirebaseManagementProjects {
         .get<AdminSdkConfig>('projects/$projectId/adminSdkConfig');
   }
 
+  /// Returns the Google Analytics details associated with the Firebase project.
+  Future<AnalyticsDetails> getAnalyticsDetails(String projectId) async {
+    return firebaseAPIClient
+        .get<AnalyticsDetails>('projects/$projectId/analyticsDetails');
+  }
+
   /// Adds Firebase services to an existing Google Cloud Platform project.
   ///
   /// The specified project becomes a Firebase project, and Firebase services
@@ -110,6 +116,56 @@ class FirebaseProjectMetadata extends UnmodifiableSnapshotView {
   /// User-defined key-value pairs intended for developers and client-side tools.
   /// These annotations are not modified by Firebase services.
   Map<String, String>? get annotations => getMap<String>('annotations');
+}
+
+class AnalyticsDetails extends UnmodifiableSnapshotView {
+  AnalyticsDetails(super.snapshot);
+
+  AnalyticsProperty get analyticsProperty => get('analyticsProperty');
+
+  List<StreamMapping> get streamMappings => getList('streamMappings')!;
+}
+
+/// Details of a Google Analytics property
+class AnalyticsProperty extends UnmodifiableSnapshotView {
+  AnalyticsProperty(super.snapshot);
+
+  /// The globally unique, Google-assigned identifier of the Google Analytics
+  /// property associated with the specified FirebaseProject.
+  String get id => get('id');
+
+  /// The user-assigned display name of the Google Analytics property associated
+  /// with the specified FirebaseProject.
+  String get displayName => get('displayName');
+
+  /// The ID of the Google Analytics account for the Google Analytics property
+  /// associated with the specified FirebaseProject.
+  String get analyticsAccountId => get('analyticsAccountId');
+}
+
+/// A mapping of a Firebase App to a Google Analytics data stream
+class StreamMapping extends UnmodifiableSnapshotView {
+  StreamMapping(super.snapshot);
+
+  /// The resource name of the Firebase App associated with the Google Analytics
+  /// data stream.
+  ///
+  /// Format: projects/{projectId}/{android/ios/web}Apps/{appId}
+  String get app => get('app');
+
+  /// The unique Google-assigned identifier of the Google Analytics data stream
+  /// associated with the Firebase App.
+  ///
+  /// Format: int64
+  String get streamId => get('streamId');
+
+  /// The unique Google-assigned identifier of the Google Analytics web stream
+  /// associated with the Firebase Web App.
+  ///
+  /// Firebase SDKs use this ID to interact with Google Analytics APIs.
+  ///
+  /// Applicable for Firebase Web Apps only.
+  String? get measurementId => get('measurementId');
 }
 
 class DefaultProjectResources extends UnmodifiableSnapshotView {

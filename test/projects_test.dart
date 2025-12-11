@@ -152,6 +152,30 @@ void main() {
                 .having((e) => e.code, 'code', 'INVALID_ARGUMENT')));
       });
     });
+
+    group('getAnalyticsDetails', () {
+      test('returns analytics details', () async {
+        final result = await projects.getAnalyticsDetails(testProjectId);
+
+        expect(result.analyticsProperty.analyticsAccountId, isNotEmpty);
+        expect(result.analyticsProperty.id, isNotEmpty);
+        expect(result.streamMappings, isNotEmpty);
+        for (var s in result.streamMappings) {
+          expect(s.app, startsWith('projects/$testProjectId/'));
+          expect(s.streamId, isNotEmpty);
+          expect(
+              s.measurementId, s.app.contains('webApps') ? isNotEmpty : isNull);
+        }
+      });
+
+      test('throws when analytics not found', () async {
+        expect(
+            () => projects.getAnalyticsDetails('unknown'),
+            throwsA(isA<FirebaseApiException>()
+                .having((e) => e.status, 'status', 403)
+                .having((e) => e.code, 'code', 'PERMISSION_DENIED')));
+      });
+    });
   });
 }
 
@@ -177,6 +201,27 @@ class _MockBackend {
     'databaseURL': 'https://$testProjectId.firebaseio.com',
     'storageBucket': '$testProjectId.appspot.com',
     'locationId': 'us-central',
+  };
+
+  final Map<String, Map<String, dynamic>> analytics = {
+    testProjectId: {
+      'analyticsProperty': {
+        'id': 'GA-PROPERTY-456',
+        'displayName': 'Test Property',
+        'analyticsAccountId': 'GA-ACCOUNT-123',
+      },
+      'streamMappings': [
+        {
+          'app': 'projects/$testProjectId/androidApps/1234567890:android',
+          'streamId': '1234567890',
+        },
+        {
+          'app': 'projects/$testProjectId/webApps/1234567890:web',
+          'streamId': '1234567890',
+          'measurementId': 'G-1234567890',
+        },
+      ],
+    },
   };
 
   final List<Map<String, Object>> projects = [
@@ -255,7 +300,10 @@ class _MockBackend {
         } else if (segments.length == 3 && request.method == 'GET') {
           // Get project: GET /projects/{id}
           final id = segments.last;
-          return _getResponse(request, projects, (p) => p['projectId'] == id);
+          return _getResponse(
+              request,
+              () => projects.firstWhere((p) => p['projectId'] == id,
+                  orElse: () => throw Error.permissionDenied));
         } else if (segments.length == 3 && request.method == 'PATCH') {
           // Update project: PATCH /projects/{id}
           final id = segments.last;
@@ -272,12 +320,19 @@ class _MockBackend {
           });
 
           return _updateResponse(request, project);
-        } else if (segments.length == 4 &&
-            segments.last == 'adminSdkConfig' &&
-            request.method == 'GET') {
+        } else if (segments.length == 4 && request.method == 'GET') {
           final id = segments[2];
-          return _getResponse(request, [testProjectAdminSdkConfig],
-              (p) => p['projectId'] == id);
+          switch (segments.last) {
+            case 'adminSdkConfig':
+              return _getResponse(
+                  request,
+                  () => id == testProjectId
+                      ? testProjectAdminSdkConfig
+                      : throw Error.permissionDenied);
+            case 'analyticsDetails':
+              return _getResponse(request,
+                  () => analytics[id] ?? (throw Error.permissionDenied));
+          }
         } else if (segments.length == 3 &&
             segments[2].endsWith(':addFirebase') &&
             request.method == 'POST') {
@@ -332,14 +387,8 @@ class _MockBackend {
   }
 
   http.Response _getResponse(
-      http.Request request,
-      List<Map<String, dynamic>> elements,
-      bool Function(Map<String, dynamic>) predicate) {
-    return http.Response(
-        json.encode(elements.firstWhere(predicate,
-            orElse: () => throw Error.permissionDenied)),
-        200,
-        request: request);
+      http.Request request, Map<String, dynamic> Function() callback) {
+    return http.Response(json.encode(callback()), 200, request: request);
   }
 
   http.Response _listResponse(
