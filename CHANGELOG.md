@@ -1,3 +1,12 @@
+## 0.0.5
+
+ - **FEAT**: added FirebaseManagementAppDistribution.uploadRelease. ([248d3d9f](https://github.com/appsup-dart/firebase_management/commit/248d3d9f4cdb7eaf4b2c072451e8858f486573bd))
+ - **FEAT**: added FirebaseManagement.appDistribution. ([2db9ff28](https://github.com/appsup-dart/firebase_management/commit/2db9ff28765a3b5a486a1796a3c430ff4000bda1))
+ - **FEAT**: added FirebaseManagementProjects.addGoogleAnalytics and removeAnalytics. ([9cc522ac](https://github.com/appsup-dart/firebase_management/commit/9cc522ac79244fa68e0886c038eb3554d3d4ca7c))
+ - **FEAT**: added FirebaseManagementProjects.getAnalyticsDetails. ([484c1553](https://github.com/appsup-dart/firebase_management/commit/484c1553ad55d598c134a86462acb41df9811de3))
+ - **FEAT**: added FirebaseManagementProjects.updateFirebaseProject. ([58673a06](https://github.com/appsup-dart/firebase_management/commit/58673a063db533659bd4ece6c24fc0f6f4723043))
+ - **FEAT**: added FirebaseManagementProjects.addFirebase. ([a7d2c05b](https://github.com/appsup-dart/firebase_management/commit/a7d2c05b1052a1c21a86af3f6866d45837f4943e))
+
 ## 0.0.4+3
 
  - **REFACTOR**: set min sdk to 3.0.0. ([a3d39352](https://github.com/appsup-dart/firebase_management/commit/a3d39352eef5f1ec72af260c198b84edaceefc2a))

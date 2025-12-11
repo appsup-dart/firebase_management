@@ -1,6 +1,6 @@
 name: firebase_management
 description: Tools for managing firebase projects
-version: 0.0.4+3
+version: 0.0.5
 homepage: https://github.com/appsup-dart/firebase_management
 repository: https://github.com/appsup-dart/firebase_management
 
