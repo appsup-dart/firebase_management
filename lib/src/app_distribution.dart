@@ -42,6 +42,33 @@ class FirebaseManagementAppDistribution {
         'groupAliases': groupAliases,
     });
   }
+
+  /// Uploads a new release binary for the given Firebase app.
+  ///
+  /// [projectNumber] is the Firebase project number.
+  /// [appId] is the Firebase app ID.
+  /// [fileBytes] are the binary file contents to upload.
+  /// [fileName] is the name of the file being uploaded.
+  /// [releaseNotes] optional release notes for this release.
+  ///
+  /// Returns an [AppRelease] after the upload completes.
+  Future<AppRelease> uploadRelease(String projectNumber, String appId,
+      List<int> fileBytes, String fileName) async {
+    // Use the upload endpoint with multipart
+    final uploadClient = _client.withBaseUri(
+        'https://firebaseappdistribution.googleapis.com/upload/v1/');
+
+    var s = await uploadClient.uploadFile<Snapshot>(
+      'projects/$projectNumber/apps/$appId/releases:upload',
+      fileBytes,
+      fileName,
+    );
+
+    return (await OperationPoller<Snapshot>(_client)
+            .poll(s.child('name').as<String>()))
+        .child('release')
+        .as<AppRelease>();
+  }
 }
 
 class AppRelease extends UnmodifiableSnapshotView {

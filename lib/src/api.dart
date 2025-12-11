@@ -121,6 +121,19 @@ class FirebaseApiClient {
     return _handleResponse(response);
   }
 
+  Future<T> uploadFile<T>(
+      String path, List<int> fileBytes, String fileName) async {
+    var response = await httpClient
+        .post(Uri.parse('$baseUri$path'), body: fileBytes, headers: {
+      'Authorization':
+          'Bearer ${(await credential.getAccessToken()).accessToken}',
+      'X-Goog-Upload-Protocol': 'raw',
+      'X-Goog-Upload-File-Name': fileName,
+    });
+
+    return _handleResponse(response);
+  }
+
   Future<T> _handleResponse<T>(http.Response response) async {
     if (response.statusCode != 200) {
       var v = json.decode(response.body);

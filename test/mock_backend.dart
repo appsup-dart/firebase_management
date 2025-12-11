@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:firebase_admin/firebase_admin.dart';
 import 'package:firebase_management/firebase_management.dart';
+import 'package:firebase_management/src/operation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
 
@@ -289,7 +291,10 @@ class MockAppDistributionBackend {
 
   Map<String, dynamic> _getApp(Uri url) {
     var segments = url.pathSegments;
-    return backend.apps.getApp(segments.skip(1).take(4).join('/'),
+    // Handle upload path: /upload/v1/projects/.../apps/...
+    // or regular path: /v1/projects/.../apps/...
+    var skip = segments.first == 'upload' ? 2 : 1;
+    return backend.apps.getApp(segments.skip(skip).take(4).join('/'),
         error: Error.invalidArgument);
   }
 
@@ -339,8 +344,17 @@ class MockAppDistributionBackend {
   Future<http.Response> _handlePostRequest(http.Request request) async {
     var segments = request.url.pathSegments;
     var app = _getApp(request.url);
-
     var operation = segments.last.split(':').last;
+
+    // Handle multipart upload for releases:upload
+    if (operation == 'upload') {
+      // Create a new release from the upload
+      return backend._startOperationResponse(request, () async {
+        await Future.delayed(const Duration(milliseconds: 100));
+        throw OperationError.invalidApkOrIpa;
+      });
+    }
+
     if (segments.length == 7 && segments[5] == 'releases') {
       final releaseId = segments[6].split(':').first;
       releasesByAppId[app['name']]?.firstWhere(
@@ -392,7 +406,8 @@ class MockBackend {
       ? http_testing.MockClient((request) async {
           try {
             return await _handleRequest(request);
-          } on Error catch (e) {
+          } on Error catch (e, tr) {
+            print(tr);
             return http.Response(
                 json.encode({
                   'error': {'status': e.code, 'message': e.message}
@@ -405,6 +420,11 @@ class MockBackend {
 
   Future<http.Response> _handleRequest(http.Request request) async {
     var segments = request.url.pathSegments;
+    if (segments[1] == 'operations') {
+      if (segments.length == 3 && request.method == 'GET') {
+        return _pollOperationResponse(request, 'operations/${segments.last}');
+      }
+    }
     switch (request.url.host) {
       case 'firebase.googleapis.com':
         switch (segments[1]) {
@@ -415,14 +435,13 @@ class MockBackend {
             return projects._handleRequest(request);
           case 'availableProjects':
             return availableProjects._handleRequest(request);
-          case 'operations':
-            if (segments.length == 3 && request.method == 'GET') {
-              return _pollOperationResponse(
-                  request, 'operations/${segments.last}');
-            }
         }
         break;
       case 'firebaseappdistribution.googleapis.com':
+        // Handle upload endpoint separately
+        if (segments.isNotEmpty && segments[0] == 'upload') {
+          return appDistribution._handleRequest(request);
+        }
         return appDistribution._handleRequest(request);
     }
 
@@ -473,14 +492,25 @@ class MockBackend {
     if (completer == null) {
       throw Error.notFound;
     }
-    return http.Response(
-        json.encode({
-          'name': operationName,
-          'done': completer.isCompleted,
-          if (completer.isCompleted) 'response': await completer.future
-        }),
-        200,
-        request: request);
+    try {
+      return http.Response(
+          json.encode({
+            'name': operationName,
+            'done': completer.isCompleted,
+            if (completer.isCompleted) 'response': await completer.future
+          }),
+          200,
+          request: request);
+    } on OperationError catch (e) {
+      return http.Response(
+          json.encode({
+            'name': operationName,
+            'done': completer.isCompleted,
+            'error': {'code': e.code, 'message': e.message}
+          }),
+          200,
+          request: request);
+    }
   }
 }
 
@@ -514,4 +544,13 @@ enum Error {
   final int status;
 
   const Error(this.status, this.code, this.message);
+}
+
+enum OperationError {
+  invalidApkOrIpa(3, 'Invalid APK or IPA file');
+
+  final int code;
+  final String message;
+
+  const OperationError(this.code, this.message);
 }

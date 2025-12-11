@@ -99,5 +99,20 @@ void main() {
         );
       });
     });
+
+    group('uploadRelease', () {
+      test('uploads a non valid apk', () async {
+        final fileBytes = [1, 2, 3, 4, 5];
+        expect(
+            () => appDistribution.uploadRelease(
+                  projectNumber,
+                  appId,
+                  fileBytes,
+                  'app.apk',
+                ),
+            throwsA(isA<FirebaseOperationException>()
+                .having((e) => e.status.code, 'status.code', 3)));
+      });
+    });
   });
 }
