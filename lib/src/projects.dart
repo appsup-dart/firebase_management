@@ -43,6 +43,29 @@ class FirebaseManagementProjects {
         .get<AnalyticsDetails>('projects/$projectId/analyticsDetails');
   }
 
+  /// Removes the Google Analytics association from the Firebase project.
+  Future<void> removeAnalytics(String projectId,
+      {String? analyticsPropertyId}) async {
+    await firebaseAPIClient
+        .post<Snapshot>('projects/$projectId:removeAnalytics', {
+      if (analyticsPropertyId != null)
+        'analyticsPropertyId': analyticsPropertyId,
+    });
+  }
+
+  Future<AnalyticsDetails> addGoogleAnalytics(String projectId,
+      {String? analyticsPropertyId, String? analyticsAccountId}) async {
+    var s = await firebaseAPIClient
+        .post<Snapshot>('projects/$projectId:addGoogleAnalytics', {
+      if (analyticsPropertyId != null)
+        'analyticsPropertyId': analyticsPropertyId,
+      if (analyticsAccountId != null) 'analyticsAccountId': analyticsAccountId,
+    });
+
+    return OperationPoller<AnalyticsDetails>(firebaseAPIClient)
+        .poll(s.child('name').as<String>());
+  }
+
   /// Adds Firebase services to an existing Google Cloud Platform project.
   ///
   /// The specified project becomes a Firebase project, and Firebase services

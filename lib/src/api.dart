@@ -29,6 +29,7 @@ class FirebaseApiClient {
     ..register<Snapshot, OperationResult>((v) => OperationResult(v))
     ..register<Snapshot, AppAndroidShaData>((v) => AppAndroidShaData(v))
     ..register<Snapshot, ApnsAuthKey>((v) => ApnsAuthKey(v))
+    ..register<Snapshot, Status>((v) => Status(v))
     ..register<String, ShaCertificateType>((v) => const {
           'SHA_1': ShaCertificateType.sha_1,
           'SHA_256': ShaCertificateType.sha_256,
@@ -148,4 +149,12 @@ class FirebaseApiException extends FirebaseException {
   String toString() {
     return '${super.toString()} ($request)';
   }
+}
+
+class FirebaseOperationException extends FirebaseException {
+  final Status status;
+
+  FirebaseOperationException({
+    required this.status,
+  }) : super(code: 'OPERATION_FAILED', message: status.message);
 }

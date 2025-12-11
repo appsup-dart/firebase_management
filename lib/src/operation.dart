@@ -15,9 +15,30 @@ class OperationResult extends UnmodifiableSnapshotView {
 
   T? getResult<T>() => get('response');
 
-  FirebaseApiException? get error => get('error');
+  Status? get error => get('error');
 
   Map<String, dynamic> get metadata => get('metadata');
+}
+
+/// The Status type defines a logical error model that is suitable for different
+/// programming environments, including REST APIs and RPC APIs.
+///
+/// Each Status message contains three pieces of data: error code, error message,
+/// and error details.
+class Status extends UnmodifiableSnapshotView {
+  Status(super.snapshot);
+
+  /// The status code, which should be an enum value of google.rpc.Code.
+  int get code => get('code');
+
+  /// A developer-facing error message, which should be in English. Any user-facing
+  /// error message should be localized and sent in the google.rpc.Status.details
+  /// field, or localized by the client.
+  String get message => get('message');
+
+  /// A list of messages that carry the error details.  There is a common set of
+  /// message types for APIs to use.
+  List<Map<String, dynamic>> get details => getList('details') ?? [];
 }
 
 class OperationPoller<T> {
@@ -49,7 +70,9 @@ class OperationPoller<T> {
         maxDelay: maxDelay);
 
     if (res.error != null) {
-      throw res.error!;
+      throw FirebaseOperationException(
+        status: res.error!,
+      );
     }
 
     return res.getResult<T>()!;
