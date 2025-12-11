@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:firebase_admin/firebase_admin.dart';
@@ -91,6 +92,31 @@ void main() {
                 .having((e) => e.code, 'code', 'PERMISSION_DENIED')));
       });
     });
+
+    group('addFirebase', () {
+      test('polls operation and returns project', () async {
+        if (!backend.shouldMock) {
+          throw Skip('Skipping test in non-mock mode');
+        }
+        var availableProject = backend.availableProjects.first;
+        var projectId = availableProject['project'].split('/').last;
+        var displayName = availableProject['displayName'];
+
+        final result = await projects.addFirebase(projectId);
+
+        expect(result.projectId, projectId);
+        expect(result.displayName, displayName);
+        expect(result.resources.locationId, availableProject['locationId']);
+      }, skip: !backend.shouldMock);
+
+      test('throws when addFirebase not allowed', () async {
+        expect(
+            () => projects.addFirebase('unknown'),
+            throwsA(isA<FirebaseApiException>()
+                .having((e) => e.status, 'status', 403)
+                .having((e) => e.code, 'code', 'PERMISSION_DENIED')));
+      });
+    });
   });
 }
 
@@ -166,8 +192,20 @@ class _MockBackend {
         )
       : FirebaseManagement(Credentials.applicationDefault()!);
 
-  http.Client get httpClient =>
-      shouldMock ? http_testing.MockClient(_handleRequest) : http.Client();
+  http.Client get httpClient => shouldMock
+      ? http_testing.MockClient((request) async {
+          try {
+            return await _handleRequest(request);
+          } on Error catch (e) {
+            return http.Response(
+                json.encode({
+                  'error': {'status': e.code, 'message': e.message}
+                }),
+                e.status,
+                request: request);
+          }
+        })
+      : http.Client();
 
   Future<http.Response> _handleRequest(http.Request request) async {
     final segments = request.url.pathSegments;
@@ -189,11 +227,48 @@ class _MockBackend {
           final id = segments[2];
           return _getResponse(request, [testProjectAdminSdkConfig],
               (p) => p['projectId'] == id);
+        } else if (segments.length == 3 &&
+            segments[2].endsWith(':addFirebase') &&
+            request.method == 'POST') {
+          final id = segments[2].split(':').first;
+          final body = request.body.isNotEmpty ? json.decode(request.body) : {};
+          // Only allow known project; otherwise permission denied
+          return _startOperationResponse(request, () {
+            var availableProject = availableProjects.firstWhere(
+                (p) => p['project'].split('/').last == id,
+                orElse: () => throw Error.permissionDenied);
+            var projectId = availableProject['project'].split('/').last;
+            var project = {
+              'projectId': projectId,
+              'name': 'projects/$projectId',
+              'projectNumber': '123456789',
+              'displayName': availableProject['displayName'],
+              'state': 'ACTIVE',
+              'resources': {
+                'hostingSite': projectId,
+                'realtimeDatabaseInstance': projectId,
+                'locationId': body['locationId'] ??
+                    availableProject['locationId'] ??
+                    'us-central',
+              },
+              'etag': '1_abcdef1234567890',
+            };
+
+            return Future.delayed(const Duration(milliseconds: 100), () {
+              projects.add(project);
+              return project;
+            });
+          });
         }
         break;
       case 'availableProjects':
         if (segments.length == 2 && request.method == 'GET') {
           return _listAvailableResponse(request, availableProjects);
+        }
+        break;
+      case 'operations':
+        if (segments.length == 3 && request.method == 'GET') {
+          return _pollOperationResponse(request, 'operations/${segments.last}');
         }
         break;
     }
@@ -204,13 +279,11 @@ class _MockBackend {
       http.Request request,
       List<Map<String, dynamic>> elements,
       bool Function(Map<String, dynamic>) predicate) {
-    try {
-      return http.Response(json.encode(elements.firstWhere(predicate)), 200,
-          request: request);
-    } catch (e) {
-      return _errorResponse(request,
-          status: 'PERMISSION_DENIED', code: 403, message: 'Permission denied');
-    }
+    return http.Response(
+        json.encode(elements.firstWhere(predicate,
+            orElse: () => throw Error.permissionDenied)),
+        200,
+        request: request);
   }
 
   http.Response _listResponse(
@@ -229,6 +302,34 @@ class _MockBackend {
         request: request);
   }
 
+  final Map<String, Completer<Map<String, dynamic>>> _operations = {};
+
+  Future<http.Response> _startOperationResponse(
+      http.Request request, Future<Map<String, dynamic>> Function() operation) {
+    String operationName =
+        'operations/${DateTime.now().millisecondsSinceEpoch}';
+
+    _operations[operationName] = Completer()..complete(operation());
+
+    return _pollOperationResponse(request, operationName);
+  }
+
+  Future<http.Response> _pollOperationResponse(
+      http.Request request, String operationName) async {
+    var completer = _operations[operationName];
+    if (completer == null) {
+      throw Error.notFound;
+    }
+    return http.Response(
+        json.encode({
+          'name': operationName,
+          'done': completer.isCompleted,
+          if (completer.isCompleted) 'response': await completer.future
+        }),
+        200,
+        request: request);
+  }
+
   http.Response _listAvailableResponse(
       http.Request request, List<Map<String, dynamic>> elements) {
     var pageSize = int.parse(request.url.queryParameters['pageSize'] ?? '100');
@@ -242,16 +343,6 @@ class _MockBackend {
               : null,
         }),
         200,
-        request: request);
-  }
-
-  http.Response _errorResponse(http.Request request,
-      {required String status, required int code, required String message}) {
-    return http.Response(
-        json.encode({
-          'error': {'status': status, 'message': message}
-        }),
-        code,
         request: request);
   }
 }
@@ -274,4 +365,15 @@ class _MockAccessToken extends AccessToken {
 
   @override
   final DateTime expirationTime;
+}
+
+enum Error {
+  permissionDenied(403, 'PERMISSION_DENIED', 'Permission denied'),
+  notFound(404, 'NOT_FOUND', 'Not found');
+
+  final String message;
+  final String code;
+  final int status;
+
+  const Error(this.status, this.code, this.message);
 }

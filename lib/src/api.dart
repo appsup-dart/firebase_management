@@ -80,7 +80,6 @@ class FirebaseApiClient {
   }
 
   Future<T> post<T>(String path, Map<String, dynamic> body) async {
-    print(Uri.parse('$baseUri$path'));
     var response = await httpClient.post(Uri.parse('$baseUri$path'),
         headers: {
           'Authorization':

@@ -36,6 +36,30 @@ class FirebaseManagementProjects {
     return firebaseAPIClient
         .get<AdminSdkConfig>('projects/$projectId/adminSdkConfig');
   }
+
+  /// Adds Firebase services to an existing Google Cloud Platform project.
+  ///
+  /// The specified project becomes a Firebase project, and Firebase services
+  /// become available for the project.
+  ///
+  /// [projectId] is the project ID of the Google Cloud Platform project to
+  /// which Firebase services will be added.
+  ///
+  /// [locationId] is deprecated and should not be used.
+  ///
+  /// Returns a [FirebaseProjectMetadata] after the operation completes.
+  Future<FirebaseProjectMetadata> addFirebase(String projectId,
+      {@Deprecated('This parameter is deprecated in the Firebase API')
+      String? locationId}) async {
+    var s = await firebaseAPIClient
+        .post<Snapshot>('projects/$projectId:addFirebase', {
+      if (locationId != null) 'locationId': locationId,
+    });
+
+    return OperationPoller<FirebaseProjectMetadata>(firebaseAPIClient)
+        .poll(s.child('name').as<String>());
+  }
+
 }
 
 class CloudProjectInfo extends UnmodifiableSnapshotView {
