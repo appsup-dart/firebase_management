@@ -234,6 +234,139 @@ class MockAvailableProjectsBackend {
   }
 }
 
+class MockAppBackend {
+  final MockBackend backend;
+
+  final Map<String, Map<String, dynamic>> apps = {
+    'projects/967810674370/apps/1:967810674370:android:9f90dc2e58dfb96d6b155b':
+        {
+      'name':
+          'projects/967810674370/apps/1:967810674370:android:9f90dc2e58dfb96d6b155b',
+      'displayName': 'Test App',
+      'platform': 'android',
+      'appId': '1:967810674370:android:9f90dc2e58dfb96d6b155b',
+    },
+  };
+
+  MockAppBackend(this.backend);
+
+  Map<String, dynamic> getApp(String appId, {Error error = Error.notFound}) =>
+      apps[appId] ?? (throw error);
+}
+
+class MockAppDistributionBackend {
+  final MockBackend backend;
+
+  final Map<String, List<Map<String, dynamic>>> releasesByAppId = {
+    'projects/967810674370/apps/1:967810674370:android:9f90dc2e58dfb96d6b155b':
+        [
+      {
+        'name':
+            'projects/967810674370/apps/1:967810674370:android:9f90dc2e58dfb96d6b155b/releases/2ihsr3j631410',
+        'displayVersion': '25.3.0-beta.1',
+        'buildVersion': '50766465',
+        'releaseNotes': {'text': 'Initial release'},
+        'createTime': '2024-01-01T00:00:00Z',
+        'firebaseConsoleUri': 'https://console.firebase.google.com/app-1',
+        'testingUri': 'https://appdistribution.firebase.google.com/app-1',
+        'binaryDownloadUri': 'https://download.firebase.com/app-1',
+      },
+      {
+        'name':
+            'projects/967810674370/apps/1:967810674370:android:9f90dc2e58dfb96d6b155b/releases/7bdm21i5gk9b8',
+        'displayVersion': '25.3.0-beta.1',
+        'buildVersion': '50766465',
+        'releaseNotes': {'text': 'Initial release'},
+        'createTime': '2024-01-01T00:00:00Z',
+        'firebaseConsoleUri': 'https://console.firebase.google.com/app-1',
+        'testingUri': 'https://appdistribution.firebase.google.com/app-1',
+        'binaryDownloadUri': 'https://download.firebase.com/app-1',
+      },
+    ],
+  };
+
+  MockAppDistributionBackend(this.backend);
+
+  Map<String, dynamic> _getApp(Uri url) {
+    var segments = url.pathSegments;
+    return backend.apps.getApp(segments.skip(1).take(4).join('/'),
+        error: Error.invalidArgument);
+  }
+
+  Future<http.Response> _handleGetRequest(http.Request request) async {
+    var app = _getApp(request.url);
+    var segments = request.url.pathSegments;
+    var releases = releasesByAppId[app['name']] ?? [];
+    if (segments.length == 6 && segments.last == 'releases') {
+      return backend._listResponse(request, 'releases', releases);
+    } else if (segments.length == 7) {
+      switch (segments[5]) {
+        case 'releases':
+          var releaseId = segments[6];
+          return backend._getResponse(
+              request,
+              () => releases.firstWhere(
+                  (r) => r['name'].toString().endsWith('/$releaseId'),
+                  orElse: () => throw Error.notFound));
+      }
+    }
+    throw Error.notFound;
+  }
+
+  Future<http.Response> _handlePatchRequest(http.Request request) async {
+    var app = _getApp(request.url);
+    var segments = request.url.pathSegments;
+    if (segments.length == 7 && segments[5] == 'releases') {
+      final body = request.body.isNotEmpty
+          ? json.decode(request.body) as Map<String, dynamic>
+          : <String, dynamic>{};
+      var releases = releasesByAppId[app['name']] ?? [];
+      var releaseId = segments[6];
+      var release = releases.firstWhere(
+          (r) => r['name'].toString().endsWith('/$releaseId'),
+          orElse: () => throw Error.notFound);
+      release.addAll({
+        if (body['displayVersion'] != null)
+          'displayVersion': body['displayVersion'],
+        if (body['buildVersion'] != null) 'buildVersion': body['buildVersion'],
+        if (body['releaseNotes'] != null) 'releaseNotes': body['releaseNotes'],
+      });
+      return backend._updateResponse(request, release);
+    }
+    throw Error.notFound;
+  }
+
+  Future<http.Response> _handlePostRequest(http.Request request) async {
+    var segments = request.url.pathSegments;
+    var app = _getApp(request.url);
+
+    var operation = segments.last.split(':').last;
+    if (segments.length == 7 && segments[5] == 'releases') {
+      final releaseId = segments[6].split(':').first;
+      releasesByAppId[app['name']]?.firstWhere(
+          (r) => r['name'].toString().endsWith('/$releaseId'),
+          orElse: () => throw Error.notFound);
+      switch (operation) {
+        case 'distribute':
+          return http.Response(json.encode({}), 200, request: request);
+      }
+    }
+    throw Error.notFound;
+  }
+
+  Future<http.Response> _handleRequest(http.Request request) {
+    switch (request.method) {
+      case 'GET':
+        return _handleGetRequest(request);
+      case 'PATCH':
+        return _handlePatchRequest(request);
+      case 'POST':
+        return _handlePostRequest(request);
+    }
+    throw Error.notFound;
+  }
+}
+
 class MockBackend {
   static const testToken = 'test-access-token';
 
@@ -242,6 +375,9 @@ class MockBackend {
   late final MockProjectsBackend projects = MockProjectsBackend(this);
   late final MockAvailableProjectsBackend availableProjects =
       MockAvailableProjectsBackend(this);
+  late final MockAppDistributionBackend appDistribution =
+      MockAppDistributionBackend(this);
+  late final MockAppBackend apps = MockAppBackend(this);
 
   MockBackend({this.shouldMock = true});
 
@@ -268,19 +404,28 @@ class MockBackend {
       : http.Client();
 
   Future<http.Response> _handleRequest(http.Request request) async {
-    final segments = request.url.pathSegments;
-
-    switch (segments[1]) {
-      case 'projects':
-        return projects._handleRequest(request);
-      case 'availableProjects':
-        return availableProjects._handleRequest(request);
-      case 'operations':
-        if (segments.length == 3 && request.method == 'GET') {
-          return _pollOperationResponse(request, 'operations/${segments.last}');
+    var segments = request.url.pathSegments;
+    switch (request.url.host) {
+      case 'firebase.googleapis.com':
+        switch (segments[1]) {
+          case 'projects':
+            if (segments.contains('apps')) {
+              return appDistribution._handleRequest(request);
+            }
+            return projects._handleRequest(request);
+          case 'availableProjects':
+            return availableProjects._handleRequest(request);
+          case 'operations':
+            if (segments.length == 3 && request.method == 'GET') {
+              return _pollOperationResponse(
+                  request, 'operations/${segments.last}');
+            }
         }
         break;
+      case 'firebaseappdistribution.googleapis.com':
+        return appDistribution._handleRequest(request);
     }
+
     return http.Response(json.encode({}), 404, request: request);
   }
 

@@ -16,6 +16,7 @@ export 'package:firebase_admin/firebase_admin.dart'
 
 part 'src/projects.dart';
 part 'src/apps.dart';
+part 'src/app_distribution.dart';
 
 class FirebaseManagement {
   final FirebaseApiClient _client;
@@ -27,4 +28,8 @@ class FirebaseManagement {
       FirebaseManagementProjects._(_client);
 
   FirebaseManagementApps get apps => FirebaseManagementApps._(_client);
+
+  FirebaseManagementAppDistribution get appDistribution =>
+      FirebaseManagementAppDistribution._(_client
+          .withBaseUri('https://firebaseappdistribution.googleapis.com/v1'));
 }

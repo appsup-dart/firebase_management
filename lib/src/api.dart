@@ -23,6 +23,8 @@ class FirebaseApiClient {
     ..register<Snapshot, AnalyticsDetails>((v) => AnalyticsDetails(v))
     ..register<Snapshot, AnalyticsProperty>((v) => AnalyticsProperty(v))
     ..register<Snapshot, StreamMapping>((v) => StreamMapping(v))
+    ..register<Snapshot, AppRelease>((v) => AppRelease(v))
+    ..register<Snapshot, ReleaseNotes>((v) => ReleaseNotes(v))
     ..register<Snapshot, AppMetadata>((v) => AppMetadata(v))
     ..register<Snapshot, Snapshot>((v) => v)
     ..register<Snapshot, AppConfigurationData>((v) => AppConfigurationData(v))
