@@ -9,7 +9,7 @@ class FirebaseManagementProjects {
   /// account.
   Future<List<FirebaseProjectMetadata>> listFirebaseProjects(
       {int pageSize = 100}) async {
-    return firebaseAPIClient.list('projects', 'results');
+    return firebaseAPIClient.list('projects', 'results', pageSize: pageSize);
   }
 
   /// Gets the Firebase project information identified by the specified project

@@ -70,7 +70,7 @@ class FirebaseApiClient {
     do {
       var page = await get<Snapshot>(path, query: {
         'pageSize': '$pageSize',
-        if (nextPageToken != null) 'nextPageToken': nextPageToken
+        if (nextPageToken != null) 'pageToken': nextPageToken
       });
       projects.addAll(page.child(field).asList<T>() ?? []);
       nextPageToken = page.child('nextPageToken').as<String?>();
