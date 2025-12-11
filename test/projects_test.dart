@@ -72,11 +72,51 @@ void main() {
                 .having((e) => e.code, 'code', 'PERMISSION_DENIED')));
       });
     });
+
+    group('getAdminSdkConfig', () {
+      test('returns admin sdk config', () async {
+        final result = await projects.getAdminSdkConfig(testProjectId);
+
+        expect(result.projectId, testProjectId);
+        expect(result.databaseURL, 'https://$testProjectId.firebaseio.com');
+        expect(result.storageBucket, '$testProjectId.appspot.com');
+        expect(result.locationId, 'us-central');
+      });
+
+      test('throws when config missing', () async {
+        expect(
+            () => projects.getAdminSdkConfig('unknown'),
+            throwsA(isA<FirebaseApiException>()
+                .having((e) => e.status, 'status', 403)
+                .having((e) => e.code, 'code', 'PERMISSION_DENIED')));
+      });
+    });
   });
 }
 
 class _MockBackend {
   static const testToken = 'test-access-token';
+
+  static const testProject = {
+    'projectId': testProjectId,
+    'name': 'projects/$testProjectId',
+    'projectNumber': '123456789',
+    'displayName': 'Test Project',
+    'state': 'ACTIVE',
+    'resources': {
+      'hostingSite': testProjectId,
+      'realtimeDatabaseInstance': testProjectId,
+      'locationId': 'us-central',
+    },
+    'etag': '1_abcdef1234567890',
+  };
+
+  static const testProjectAdminSdkConfig = {
+    'projectId': testProjectId,
+    'databaseURL': 'https://$testProjectId.firebaseio.com',
+    'storageBucket': '$testProjectId.appspot.com',
+    'locationId': 'us-central',
+  };
 
   final List<Map<String, dynamic>> projects = [
     ...List.generate(
@@ -94,26 +134,14 @@ class _MockBackend {
               },
               'etag': '1_abcdef1234567890',
             }),
-    {
-      'projectId': testProjectId,
-      'name': 'projects/$testProjectId',
-      'projectNumber': '123456789',
-      'displayName': 'Test Project',
-      'state': 'ACTIVE',
-      'resources': {
-        'hostingSite': testProjectId,
-        'realtimeDatabaseInstance': testProjectId,
-        'locationId': 'us-central',
-      },
-      'etag': '1_abcdef1234567890',
-    },
+    testProject,
   ];
 
   final List<Map<String, dynamic>> availableProjects = [
     {
       'project': 'projects/available-1',
       'displayName': 'Available One',
-      'locationId': 'us-central1',
+      'locationId': 'us-central',
     },
     {
       'project': 'projects/available-2',
@@ -151,12 +179,16 @@ class _MockBackend {
             // List projects: GET /projects
             return _listResponse(request, projects);
           }
-        } else if (segments.length == 3) {
-          if (request.method == 'GET') {
-            // Get project: GET /projects/{id}
-            final id = segments.last;
-            return _getResponse(request, projects, (p) => p['projectId'] == id);
-          }
+        } else if (segments.length == 3 && request.method == 'GET') {
+          // Get project: GET /projects/{id}
+          final id = segments.last;
+          return _getResponse(request, projects, (p) => p['projectId'] == id);
+        } else if (segments.length == 4 &&
+            segments.last == 'adminSdkConfig' &&
+            request.method == 'GET') {
+          final id = segments[2];
+          return _getResponse(request, [testProjectAdminSdkConfig],
+              (p) => p['projectId'] == id);
         }
         break;
       case 'availableProjects':
@@ -176,15 +208,8 @@ class _MockBackend {
       return http.Response(json.encode(elements.firstWhere(predicate)), 200,
           request: request);
     } catch (e) {
-      return http.Response(
-          json.encode({
-            'error': {
-              'status': 'PERMISSION_DENIED',
-              'message': 'Permission denied'
-            }
-          }),
-          403,
-          request: request);
+      return _errorResponse(request,
+          status: 'PERMISSION_DENIED', code: 403, message: 'Permission denied');
     }
   }
 
@@ -217,6 +242,16 @@ class _MockBackend {
               : null,
         }),
         200,
+        request: request);
+  }
+
+  http.Response _errorResponse(http.Request request,
+      {required String status, required int code, required String message}) {
+    return http.Response(
+        json.encode({
+          'error': {'status': status, 'message': message}
+        }),
+        code,
         request: request);
   }
 }
