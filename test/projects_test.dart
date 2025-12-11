@@ -117,6 +117,41 @@ void main() {
                 .having((e) => e.code, 'code', 'PERMISSION_DENIED')));
       });
     });
+
+    group('updateFirebaseProject', () {
+      test('patches displayName and annotations', () async {
+        var project = await projects.getFirebaseProject(testProjectId);
+
+        try {
+          final newName = 'Updated Name';
+          final newAnnotations = {'k1': 'v1', 'k2': 'v2'};
+
+          final result = await projects.updateFirebaseProject(testProjectId,
+              displayName: newName, annotations: newAnnotations);
+
+          expect(result.projectId, testProjectId);
+          expect(result.displayName, newName);
+          expect(result.annotations, isNotNull);
+          expect(result.annotations, containsPair('k1', 'v1'));
+          expect(result.annotations, containsPair('k2', 'v2'));
+        } finally {
+          if (!backend.shouldMock) {
+            await projects.updateFirebaseProject(testProjectId,
+                displayName: project.displayName,
+                annotations: project.annotations ?? {});
+          }
+        }
+      });
+
+      test('throws when update not allowed', () async {
+        expect(
+            () => projects.updateFirebaseProject('unknown',
+                displayName: 'x', annotations: {'k': 'v'}),
+            throwsA(isA<FirebaseApiException>()
+                .having((e) => e.status, 'status', 400)
+                .having((e) => e.code, 'code', 'INVALID_ARGUMENT')));
+      });
+    });
   });
 }
 
@@ -144,7 +179,7 @@ class _MockBackend {
     'locationId': 'us-central',
   };
 
-  final List<Map<String, dynamic>> projects = [
+  final List<Map<String, Object>> projects = [
     ...List.generate(
         10,
         (index) => {
@@ -160,7 +195,7 @@ class _MockBackend {
               },
               'etag': '1_abcdef1234567890',
             }),
-    testProject,
+    {...testProject},
   ];
 
   final List<Map<String, dynamic>> availableProjects = [
@@ -221,6 +256,22 @@ class _MockBackend {
           // Get project: GET /projects/{id}
           final id = segments.last;
           return _getResponse(request, projects, (p) => p['projectId'] == id);
+        } else if (segments.length == 3 && request.method == 'PATCH') {
+          // Update project: PATCH /projects/{id}
+          final id = segments.last;
+          final body = request.body.isNotEmpty
+              ? json.decode(request.body)
+              : <String, dynamic>{};
+
+          var project = projects.firstWhere((p) => p['projectId'] == id,
+              orElse: () => throw Error.invalidArgument);
+          project.addAll({
+            if (body['displayName'] != null) 'displayName': body['displayName'],
+            if (body['annotations'] != null)
+              'annotations': Map<String, String>.from(body['annotations']),
+          });
+
+          return _updateResponse(request, project);
         } else if (segments.length == 4 &&
             segments.last == 'adminSdkConfig' &&
             request.method == 'GET') {
@@ -238,7 +289,7 @@ class _MockBackend {
                 (p) => p['project'].split('/').last == id,
                 orElse: () => throw Error.permissionDenied);
             var projectId = availableProject['project'].split('/').last;
-            var project = {
+            var project = <String, Object>{
               'projectId': projectId,
               'name': 'projects/$projectId',
               'projectNumber': '123456789',
@@ -273,6 +324,11 @@ class _MockBackend {
         break;
     }
     return http.Response(json.encode({}), 404, request: request);
+  }
+
+  http.Response _updateResponse(
+      http.Request request, Map<String, dynamic> updated) {
+    return http.Response(json.encode(updated), 200, request: request);
   }
 
   http.Response _getResponse(
@@ -369,7 +425,8 @@ class _MockAccessToken extends AccessToken {
 
 enum Error {
   permissionDenied(403, 'PERMISSION_DENIED', 'Permission denied'),
-  notFound(404, 'NOT_FOUND', 'Not found');
+  notFound(404, 'NOT_FOUND', 'Not found'),
+  invalidArgument(400, 'INVALID_ARGUMENT', 'Invalid argument');
 
   final String message;
   final String code;

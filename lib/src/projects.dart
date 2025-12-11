@@ -60,6 +60,26 @@ class FirebaseManagementProjects {
         .poll(s.child('name').as<String>());
   }
 
+  /// Updates the attributes of the specified Firebase project.
+  ///
+  /// All attributes specified in the update mask are replaced in the Firebase
+  /// project by the values of the attributes provided. Attributes not specified
+  /// in the update mask are not affected.
+  ///
+  /// [projectId] is the project ID of the Firebase project to update.
+  ///
+  /// [displayName] is the user-assigned display name of the Firebase project.
+  ///
+  /// [annotations] are user-defined key-value pairs intended for developers and
+  /// client-side tools. They are not modified by Firebase services.
+  Future<FirebaseProjectMetadata> updateFirebaseProject(String projectId,
+      {String? displayName, Map<String, String>? annotations}) async {
+    return firebaseAPIClient
+        .patch<FirebaseProjectMetadata>('projects/$projectId', {
+      if (displayName != null) 'displayName': displayName,
+      if (annotations != null) 'annotations': annotations,
+    });
+  }
 }
 
 class CloudProjectInfo extends UnmodifiableSnapshotView {
@@ -86,6 +106,10 @@ class FirebaseProjectMetadata extends UnmodifiableSnapshotView {
   String get state => get('state');
 
   DefaultProjectResources get resources => get('resources')!;
+
+  /// User-defined key-value pairs intended for developers and client-side tools.
+  /// These annotations are not modified by Firebase services.
+  Map<String, String>? get annotations => getMap<String>('annotations');
 }
 
 class DefaultProjectResources extends UnmodifiableSnapshotView {
