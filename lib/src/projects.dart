@@ -23,7 +23,8 @@ class FirebaseManagementProjects {
   /// Firebase resources added.
   Future<List<CloudProjectInfo>> listAvailableCloudProjects(
       {int pageSize = 100}) {
-    return firebaseAPIClient.list('availableProjects', 'projectInfo');
+    return firebaseAPIClient.list('availableProjects', 'projectInfo',
+        pageSize: pageSize);
   }
 
   /// Gets the configuration artifact associated with the specified

@@ -41,6 +41,19 @@ void main() {
       });
     });
 
+    group('listAvailableCloudProjects', () {
+      test('returns available cloud projects', () async {
+        final result = await projects.listAvailableCloudProjects(pageSize: 2);
+
+        expect(result, hasLength(greaterThan(2)));
+        for (var p in result) {
+          expect(p.project, startsWith('projects/'));
+          expect(p.displayName, isNotEmpty);
+          expect(p.locationId, isIn(['us-central', 'europe-west1', null]));
+        }
+      });
+    });
+
     group('getFirebaseProject', () {
       test('returns single project metadata', () async {
         final result = await projects.getFirebaseProject(testProjectId);
@@ -96,6 +109,24 @@ class _MockBackend {
     },
   ];
 
+  final List<Map<String, dynamic>> availableProjects = [
+    {
+      'project': 'projects/available-1',
+      'displayName': 'Available One',
+      'locationId': 'us-central1',
+    },
+    {
+      'project': 'projects/available-2',
+      'displayName': 'Available Two',
+      'locationId': 'europe-west1',
+    },
+    {
+      'project': 'projects/available-3',
+      'displayName': 'Available Three',
+      'locationId': null,
+    },
+  ];
+
   final bool shouldMock;
 
   _MockBackend({this.shouldMock = true});
@@ -127,6 +158,12 @@ class _MockBackend {
             return _getResponse(request, projects, (p) => p['projectId'] == id);
           }
         }
+        break;
+      case 'availableProjects':
+        if (segments.length == 2 && request.method == 'GET') {
+          return _listAvailableResponse(request, availableProjects);
+        }
+        break;
     }
     return http.Response(json.encode({}), 404, request: request);
   }
@@ -159,6 +196,22 @@ class _MockBackend {
     return http.Response(
         json.encode({
           'results': elements.skip(pageToken).take(pageSize).toList(),
+          'nextPageToken': (pageToken + pageSize) < elements.length
+              ? (pageToken + pageSize).toString()
+              : null,
+        }),
+        200,
+        request: request);
+  }
+
+  http.Response _listAvailableResponse(
+      http.Request request, List<Map<String, dynamic>> elements) {
+    var pageSize = int.parse(request.url.queryParameters['pageSize'] ?? '100');
+    var pageToken = int.parse(request.url.queryParameters['pageToken'] ?? '0');
+
+    return http.Response(
+        json.encode({
+          'projectInfo': elements.skip(pageToken).take(pageSize).toList(),
           'nextPageToken': (pageToken + pageSize) < elements.length
               ? (pageToken + pageSize).toString()
               : null,
